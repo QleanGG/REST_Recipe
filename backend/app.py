@@ -7,7 +7,6 @@ from flask_cors import CORS, cross_origin
 from sqlalchemy.orm import class_mapper
 from werkzeug.utils import secure_filename
 import jwt
-import bcrypt
 from flask_bcrypt import Bcrypt
 from flask_jwt_extended import JWTManager, create_access_token, get_jwt_identity, jwt_required
 
@@ -21,6 +20,7 @@ app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+mysqlconnector://root:123@localho
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
 bcrypt = Bcrypt(app)
+jwt = JWTManager(app)
 
 # Get the directory where app.py is located
 app_directory = os.path.dirname(__file__)
@@ -64,7 +64,7 @@ def token_required(f):
             return jsonify({'message': 'Token is missing'}), 401
 
         try:
-            data = jwt.decode(token, 'your-secret-key', algorithms=['HS256'])
+            data = jwt.decode(token, app.config['JWT_SECRET_KEY'], algorithms=['HS256'])
             current_user_id = data['user_id']
         except jwt.ExpiredSignatureError:
             return jsonify({'message': 'Token has expired'}), 401
@@ -175,15 +175,17 @@ def login():
     username = request.form['username']
     password = request.form['password']
 
-    # Check if the user exists and the password is correct (you'll need to implement this logic)
+    # Check if the user exists
     user = User.query.filter_by(username=username).first()
-    if user and user.check_password(password):
+
+    if user and bcrypt.check_password_hash(user.password, password):
         # Generate an access token with an expiration time
         expires = datetime.timedelta(hours=1)
         access_token = create_access_token(identity=user.id, expires_delta=expires)
         return jsonify({'access_token': access_token}), 200
     else:
         return jsonify({'message': 'Invalid username or password'}), 401
+
 
 
 @app.route('/register', methods=['POST'])
@@ -196,11 +198,11 @@ def register():
     if existing_user:
         return jsonify({'message': 'Username is already taken'}), 400
 
-    # Hash and salt the password
-    hashed_password = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt())
+    # Hash and salt the password using Bcrypt
+    hashed_password = bcrypt.generate_password_hash(password).decode('utf-8')
 
     # Create a new user and add to the database
-    new_user = User(username=username, password=hashed_password.decode('utf-8'))
+    new_user = User(username=username, password=hashed_password)
     db.session.add(new_user)
     db.session.commit()
 
