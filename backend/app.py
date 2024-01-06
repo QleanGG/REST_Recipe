@@ -1,13 +1,15 @@
 import datetime 
+import json,time,os
 from functools import wraps
 from flask import Flask, jsonify, request, send_from_directory, url_for
 from flask_sqlalchemy import SQLAlchemy
 from flask_cors import CORS, cross_origin
 from sqlalchemy.orm import class_mapper
-import os
 from werkzeug.utils import secure_filename
 import jwt
 import bcrypt
+from flask_bcrypt import Bcrypt
+from flask_jwt_extended import JWTManager, create_access_token, get_jwt_identity, jwt_required
 
 
 app = Flask(__name__)
@@ -18,6 +20,7 @@ app.secret_key = 'secret_secret_key'
 app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+mysqlconnector://root:123@localhost/restaurant'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
+bcrypt = Bcrypt(app)
 
 # Get the directory where app.py is located
 app_directory = os.path.dirname(__file__)
@@ -45,11 +48,11 @@ with app.app_context():
 #---------------------------------------------------------
 
 #* Declaring login access 
+
 # Generate a JWT
-def generate_token(user_id, expiration=None):
-    payload = {'user_id': user_id}
-    if expiration:
-        payload['exp'] = expiration
+def generate_token(user_id):
+    expiration = int(time.time()) + 3600  # Set the expiration time to 1 hour from the current time
+    payload = {'user_id': user_id, 'exp': expiration}
     token = jwt.encode(payload, 'secret-secret-key', algorithm='HS256')
     return token
 
@@ -167,17 +170,18 @@ def update_recipe():
         else:
             return {"message":"Recipe not found"}
 
-@app.route('/login', methods=['GET', 'POST'])
+@app.route('/login', methods=['POST'])
 def login():
     username = request.form['username']
     password = request.form['password']
 
+    # Check if the user exists and the password is correct (you'll need to implement this logic)
     user = User.query.filter_by(username=username).first()
-
-    if user and bcrypt.checkpw(password.encode('utf-8'), user.password.encode('utf-8')):
-        # Generate a token with an expiration time (e.g., 1 hour)
-        token = generate_token(user.id, expiration=datetime.timedelta(hours=1))
-        return jsonify({'token': token})
+    if user and user.check_password(password):
+        # Generate an access token with an expiration time
+        expires = datetime.timedelta(hours=1)
+        access_token = create_access_token(identity=user.id, expires_delta=expires)
+        return jsonify({'access_token': access_token}), 200
     else:
         return jsonify({'message': 'Invalid username or password'}), 401
 
@@ -203,9 +207,10 @@ def register():
     return jsonify({'message': 'User created successfully'}), 201
 
 @app.route('/protected', methods=['GET'])
-@token_required
-def protected_route(current_user_id):
-    return jsonify({'message': f'Hello, User {current_user_id}!'})
+@jwt_required()  # Use this decorator to protect routes
+def protected_route():
+    current_user_id = get_jwt_identity()
+    return jsonify({'message': f'Hello, User {current_user_id}!'}), 200
 
 
 if __name__ == '__main__':
