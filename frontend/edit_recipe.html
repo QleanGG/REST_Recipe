@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Qlean's Recipes</title>
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" rel="stylesheet">
+    <link href="./resources/styles/style.css" rel="stylesheet">
+    <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+</head>
+
+<body>
+
+    <nav class="navbar navbar-expand-lg navbar-light bg-light">
+        <a class="navbar-brand" href="./index.html">Qlean's Recipes</a>
+        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav"
+            aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav">
+                <li class="nav-item active">
+                    <a class="nav-link" href="./index.html">Home <span class="sr-only">(current)</span></a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="./recipes.html">Recipes</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="#">About</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="#">Contact</a>
+                </li>
+            </ul>
+            <ul class="navbar-nav ml-auto">
+                <!-- Display user name and log out if authenticated -->
+                <li class="nav-item" id="user-section" style="display: none;">
+                    <a class="nav-link" id="user-name"></a>
+                    <a class="nav-link" id="log-out" href="#">Log Out</a>
+                </li>
+                <!-- Display register and log in if not authenticated -->
+                <li class="nav-item" id="auth-section">
+                <li class="nav-item">
+                    <a class="nav-link" href="./register.html">Register</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="./login.html">Log In</a>
+                </li>
+                </li>
+            </ul>
+        </div>
+    </nav>
+
+    <div class="container">
+        <h2>Edit Recipe</h2>
+        <form id="recipe-form" enctype="multipart/form-data">
+            <input type="hidden" id="recipe-id" name="id">
+            <div class="form-group">
+                <label for="name">Recipe Name:</label>
+                <input type="text" class="form-control" name="name" id="name" required>
+            </div>
+            <div class="form-group">
+                <label for="ingredients">Ingredients:</label>
+                <input type="text" class="form-control" name="ingredients" id="ingredients">
+            </div>
+            <div class="form-group">
+                <label for="cookingTime">Cooking Time:</label>
+                <input type="text" class="form-control" name="cookingTime" id="cookingTime">
+            </div>
+            <!-- <div class="form-group">
+                <label for="image">Image:</label>
+                <input type="file" class="form-control-file" name="image" id="image">
+            </div> -->
+            <button id="submit-btn" class="btn btn-primary">Update Recipe</button>
+        </form>
+    </div>
+
+    <footer class="bg-light py-3">
+        <div class="container text-center">
+            <p>&copy; 2024 Qlean's Recipes. All Rights Reserved.</p>
+        </div>
+    </footer>
+
+    <script>
+        const MY_SERVER = 'http://127.0.0.1:5000';
+
+        function getParameterByName(name) {
+            name = name.replace(/[\[]/, "\\[").replace(/[\]]/, "\\]");
+            let regex = new RegExp("[\\?&]" + name + "=([^&#]*)");
+            let results = regex.exec(location.search);
+            return results === null ? "" : decodeURIComponent(results[1].replace(/\+/g, " "));
+        }
+
+        // Get the 'id' parameter from the URL
+        let id = getParameterByName("id");
+        document.getElementById("recipe-id").value = id;
+
+        console.log("ID from URL:", id);
+
+        const redirectToNewURL = () => window.location.href = 'recipes.html';
+
+        const edit_recipe = (event) => {
+            event.preventDefault();
+            // Get the 'id' parameter from the URL
+            const id_form = document.getElementById('recipe-id').value;
+
+            const name = document.getElementById('name').value;
+            const ingredients = document.getElementById('ingredients').value;
+            const cookingTime = document.getElementById('cookingTime').value;
+
+            // Create a FormData object and append the form data
+            const formData = new FormData();
+            formData.append('id', id_form);
+            formData.append('name', name);
+            formData.append('ingredients', ingredients);
+            formData.append('cookingTime', cookingTime);
+
+            // Log the FormData object to see its content
+            console.log("FormData:", formData);
+            console.log(name, ingredients, cookingTime, id_form);
+            // Append the image file to the FormData object
+            // formData.append('image', imageInput.files[0]);
+
+            axios.put(`${MY_SERVER}/update_recipe`, formData)
+                .then(function (response) {
+                    console.log(response);
+                    redirectToNewURL()
+                })
+                .catch(function (error) {
+                    console.log(error);
+                });
+        }
+        const form = document.getElementById('recipe-form');
+        form.addEventListener('submit', edit_recipe);
+    </script>
+
+</body>
+
+</html>

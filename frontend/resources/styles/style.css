@@ -1,0 +1,21 @@
+body {
+    font-family: 'Arial', sans-serif;
+}
+
+.hero-section {
+    background-color: #ffe5d9;
+    padding: 50px 0;
+}
+
+.recipes-grid .recipe-card {
+    margin-bottom: 30px;
+}
+
+footer {
+    background-color: #f8f9fa;
+}
+
+#recipe-list {
+    display: flex;
+    flex-wrap: wrap;
+}
