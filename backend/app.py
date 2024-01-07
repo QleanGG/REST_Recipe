@@ -209,7 +209,7 @@ def register():
     return jsonify({'message': 'User created successfully'}), 201
 
 @app.route('/protected', methods=['GET'])
-@jwt_required()  # Use this decorator to protect routes
+@jwt_required()  
 def protected_route():
     current_user_id = get_jwt_identity()
     return jsonify({'message': f'Hello, User {current_user_id}!'}), 200

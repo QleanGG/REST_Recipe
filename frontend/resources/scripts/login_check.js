@@ -18,9 +18,9 @@ if (token) {
 }
 
 // Add a click event listener to the "Log Out" link to clear the token
-const logOutLink = document.getElementById('logout-link');
-logOutLink.addEventListener('click', () => {
+const logOutButton = document.getElementById('log-out');
+
+logOutButton.addEventListener('click', () => {
     localStorage.removeItem('access_token'); // Remove the token from local storage
     window.location.href = './login.html'; // Redirect to the login page
-});
-
+})
